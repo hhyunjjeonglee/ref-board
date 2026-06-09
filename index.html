@@ -951,6 +951,14 @@
       console.warn('IDB 로드 실패:', e);
     }
 
+    // IDB에 저장된 이미지가 있으면 바로 보드로 진입
+    if (images.length > 0) {
+      hideStartup();
+      renderSidebar(); renderGallery();
+      setSaveStatus('idle');
+      return;
+    }
+
     // 이전 핸들이 있고 권한도 있으면 자동 로드
     if (fileHandle) {
       const perm = await queryPermission(fileHandle);
