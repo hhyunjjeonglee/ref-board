@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이미지 레퍼런스 보드</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15,15,15,0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #222;
+      padding: 13px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      height: 52px;
+    }
+
+    header h1 { font-size: 14px; font-weight: 600; color: #fff; }
+
+    .spacer { flex: 1; }
+
+    .count { font-size: 12px; color: #555; }
+
+    .controls { display: flex; align-items: center; gap: 8px; }
+
+    .btn {
+      padding: 6px 13px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-primary { background: #fff; color: #000; }
+    .btn-primary:hover { background: #ddd; }
+    .btn-ghost { background: transparent; color: #888; border: 1px solid #2e2e2e; }
+    .btn-ghost:hover { border-color: #555; color: #fff; }
+
+    .sort-select {
+      padding: 6px 9px;
+      background: transparent;
+      border: 1px solid #2e2e2e;
+      border-radius: 7px;
+      color: #888;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .sort-select:focus { outline: none; }
+
+    .col-label { font-size: 12px; color: #555; white-space: nowrap; }
+    input[type=range] { accent-color: #fff; cursor: pointer; width: 72px; }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 200px;
+      min-width: 200px;
+      background: #111;
+      border-right: 1px solid #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 12px 0;
+    }
+
+    .sidebar-section {
+      padding: 0 12px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      color: #444;
+      text-transform: uppercase;
+      padding: 0 8px;
+      margin-bottom: 6px;
+    }
+
+    .cat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #888;
+      transition: all 0.12s;
+      position: relative;
+      user-select: none;
+    }
+    .cat-item:hover { background: #1a1a1a; color: #ccc; }
+    .cat-item.active { background: #222; color: #fff; }
+
+    .cat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cat-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .cat-count {
+      font-size: 11px;
+      color: #444;
+      min-width: 18px;
+      text-align: right;
+    }
+
+    .cat-delete {
+      display: none;
+      background: none;
+      border: none;
+      color: #555;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 2px;
+      line-height: 1;
+    }
+    .cat-item:hover .cat-delete { display: block; }
+    .cat-item:hover .cat-count { display: none; }
+    .cat-delete:hover { color: #ff6b6b; }
+
+    .sidebar-divider {
+      height: 1px;
+      background: #1e1e1e;
+      margin: 8px 12px;
+    }
+
+    /* add category */
+    .add-cat-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 20px;
+      font-size: 12px;
+      color: #555;
+      cursor: pointer;
+      transition: color 0.12s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .add-cat-btn:hover { color: #aaa; }
+
+    .add-cat-form {
+      display: none;
+      padding: 6px 12px;
+      gap: 6px;
+      flex-direction: column;
+    }
+    .add-cat-form.open { display: flex; }
+
+    .add-cat-input {
+      padding: 6px 10px;
+      border-radius: 7px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 12px;
+      width: 100%;
+    }
+    .add-cat-input:focus { outline: none; border-color: #555; }
+
+    .color-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .color-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.1s;
+    }
+    .color-swatch.selected { border-color: #fff; }
+
+    .add-cat-actions { display: flex; gap: 6px; }
+
+    /* ── MAIN ── */
+    #main {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* tag filter bar */
+    #tag-bar {
+      display: none;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 20px;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .tag-chip {
+      padding: 3px 11px;
+      border-radius: 20px;
+      border: 1px solid #2e2e2e;
+      font-size: 11px;
+      color: #777;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .tag-chip:hover, .tag-chip.active { border-color: #fff; color: #fff; background: rgba(255,255,255,0.07); }
+
+    /* drop zone */
+    #dropzone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex: 1;
+      text-align: center;
+      padding: 40px;
+      border: 2px dashed #222;
+      margin: 16px;
+      border-radius: 14px;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+    #dropzone.drag-over { border-color: #fff; background: rgba(255,255,255,0.02); }
+    #dropzone.hidden { display: none; }
+
+    .drop-icon { font-size: 40px; opacity: 0.4; }
+    .drop-title { font-size: 16px; font-weight: 600; color: #fff; }
+    .drop-sub { font-size: 12px; color: #444; max-width: 280px; line-height: 1.6; }
+
+    /* gallery */
+    #gallery {
+      padding: 16px 20px;
+      columns: 4;
+      column-gap: 10px;
+      display: none;
+    }
+
+    .img-card {
+      break-inside: avoid;
+      margin-bottom: 10px;
+      border-radius: 9px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      background: #1a1a1a;
+      transition: transform 0.15s;
+    }
+    .img-card:hover { transform: scale(1.01); }
+    .img-card:hover .img-overlay { opacity: 1; }
+    .img-card img { width: 100%; display: block; }
+
+    .img-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%);
+      opacity: 0;
+      transition: opacity 0.18s;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 10px;
+    }
+
+    .img-cat-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.18s;
+    }
+    .img-card:hover .img-cat-badge { opacity: 1; }
+
+    .img-name { font-size: 11px; color: #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .img-size { font-size: 10px; color: #aaa; margin-top: 1px; }
+
+    .img-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+    .img-tag { padding: 2px 7px; background: rgba(255,255,255,0.12); border-radius: 9px; font-size: 10px; color: #ccc; }
+
+    .img-actions {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      display: flex;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.18s;
+    }
+    .img-card:hover .img-actions { opacity: 1; }
+
+    .icon-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.22); }
+
+    /* ── LIGHTBOX ── */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.93);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      padding: 40px;
+    }
+    #lightbox.open { display: flex; }
+
+    #lightbox img {
+      max-width: 88vw;
+      max-height: 76vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    #lightbox-info { font-size: 12px; color: #777; text-align: center; }
+
+    #lightbox-close {
+      position: fixed;
+      top: 18px;
+      right: 22px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #lightbox-close:hover { background: rgba(255,255,255,0.2); }
+
+    #lightbox-nav { display: flex; gap: 10px; }
+    .nav-btn {
+      padding: 7px 18px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.12s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* lightbox meta */
+    #lightbox-meta {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* lightbox category chips (multi-select) */
+    #lb-cat-checks { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .lb-cat-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px;
+      border: 1px solid #333; font-size: 12px; color: #777;
+      cursor: pointer; transition: all 0.12s; user-select: none;
+    }
+    .lb-cat-chip:hover { border-color: #666; color: #ccc; }
+    .lb-cat-chip.on { color: #fff; border-color: transparent; }
+    .lb-cat-chip .chip-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    #tag-input-wrap { display: flex; gap: 8px; align-items: center; }
+    #tag-input {
+      padding: 5px 11px; border-radius: 7px;
+      border: 1px solid #333; background: #1a1a1a; color: #fff; font-size: 12px;
+    }
+    #tag-input:focus { outline: none; border-color: #555; }
+
+    #lightbox-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .lb-tag {
+      padding: 2px 8px; background: rgba(255,255,255,0.12);
+      border-radius: 9px; font-size: 11px; color: #ccc; cursor: pointer;
+    }
+    .lb-tag:hover { background: rgba(255,100,100,0.2); color: #ff9999; }
+
+    /* sidebar drag-over highlight (이미지 할당) */
+    .cat-item.drop-target { background: #2a2a2a; color: #fff; outline: 1px dashed #555; outline-offset: -2px; }
+
+    /* 카테고리 순서 드래그 */
+    .cat-item[draggable="true"] { cursor: grab; }
+    .cat-item.cat-dragging { opacity: 0.35; }
+    .cat-item.cat-over-above { box-shadow: 0 -2px 0 #fff; }
+    .cat-item.cat-over-below { box-shadow: 0 2px 0 #fff; }
+
+    /* card being dragged */
+    .img-card.dragging { opacity: 0.4; }
+
+    #file-input { display: none; }
+
+    /* modal overlay for category assign on upload */
+    #assign-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #assign-modal.open { display: flex; }
+
+    .modal-box {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 24px;
+      width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-title { font-size: 14px; font-weight: 600; color: #fff; }
+    .modal-sub { font-size: 12px; color: #666; margin-top: -8px; }
+
+    .cat-option-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .cat-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 9px;
+      border: 1px solid #2a2a2a;
+      cursor: pointer;
+      transition: all 0.12s;
+      font-size: 13px;
+      color: #aaa;
+    }
+    .cat-option:hover { border-color: #444; color: #fff; background: #1e1e1e; }
+    .cat-option.selected { border-color: #555; color: #fff; background: #222; }
+
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* ── SELECTION ── */
+    .img-card .card-check {
+      position: absolute;
+      top: 8px; left: 8px;
+      width: 20px; height: 20px;
+      border-radius: 6px;
+      border: 2px solid rgba(255,255,255,0.5);
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.12s, background 0.12s, border-color 0.12s;
+      z-index: 10;
+    }
+    .img-card:hover .card-check,
+    .img-card.selected .card-check { opacity: 1; }
+    .img-card.selected .card-check {
+      background: #fff;
+      border-color: #fff;
+    }
+    .img-card.selected .card-check::after {
+      content: '';
+      display: block;
+      width: 5px; height: 9px;
+      border: 2px solid #000;
+      border-top: none; border-left: none;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+    .img-card.selected::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 9px;
+      box-shadow: inset 0 0 0 2px #fff;
+      pointer-events: none;
+    }
+
+    /* rubber-band selection rect */
+    #sel-rect {
+      display: none;
+      position: fixed;
+      border: 1px solid rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.06);
+      pointer-events: none;
+      z-index: 500;
+      border-radius: 3px;
+    }
+
+    /* floating action bar */
+    #action-bar {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 10px 14px;
+      gap: 10px;
+      align-items: center;
+      z-index: 300;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      white-space: nowrap;
+    }
+    #action-bar.visible { display: flex; }
+    .ab-label { font-size: 13px; color: #aaa; }
+    .ab-label span { color: #fff; font-weight: 600; }
+    .ab-sep { width: 1px; height: 20px; background: #333; }
+    .ab-cats { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ab-cat-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 11px; border-radius: 20px;
+      border: 1px solid #3a3a3a; background: transparent;
+      font-size: 12px; color: #bbb; cursor: pointer;
+      transition: all 0.12s;
+    }
+    .ab-cat-btn:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.08); }
+    .ab-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .ab-clear {
+      padding: 5px 11px; border-radius: 20px;
+      border: 1px solid #333; background: transparent;
+      font-size: 12px; color: #666; cursor: pointer;
+      transition: all 0.12s;
+    }
+    .ab-clear:hover { color: #fff; border-color: #555; }
+
+    /* ── STARTUP SCREEN ── */
+    #startup {
+      position: fixed;
+      inset: 0;
+      background: #0f0f0f;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #startup.hidden { display: none; }
+
+    .startup-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 320px;
+    }
+    .startup-logo { font-size: 36px; margin-bottom: 8px; opacity: 0.7; }
+    .startup-title { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.4px; }
+    .startup-sub { font-size: 13px; color: #555; text-align: center; line-height: 1.6; margin-bottom: 12px; }
+
+    .startup-btn {
+      width: 100%;
+      padding: 13px 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      text-align: left;
+      transition: all 0.15s;
+    }
+    .startup-btn .sb-label { color: #fff; }
+    .startup-btn .sb-desc  { font-size: 11px; font-weight: 400; }
+
+    .startup-btn-primary {
+      background: #1e1e1e;
+      border: 1px solid #333;
+    }
+    .startup-btn-primary:hover { background: #2a2a2a; border-color: #555; }
+    .startup-btn-primary .sb-desc { color: #666; }
+
+    .startup-btn-accent {
+      background: #fff;
+      border: 1px solid #fff;
+    }
+    .startup-btn-accent:hover { background: #e8e8e8; }
+    .startup-btn-accent .sb-label { color: #000; }
+    .startup-btn-accent .sb-desc  { color: #888; }
+
+    .startup-divider {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      margin: 2px 0;
+    }
+    .startup-divider span { font-size: 11px; color: #444; white-space: nowrap; }
+    .startup-divider::before, .startup-divider::after {
+      content: ''; flex: 1; height: 1px; background: #222;
+    }
+
+    /* save status dot in header */
+    #save-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: #555;
+    }
+    #save-status .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: #555;
+      transition: background 0.3s;
+    }
+    #save-status.saved .dot { background: #4caf50; }
+    #save-status.saving .dot { background: #ff9800; }
+    #save-status.error .dot { background: #f44336; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>이미지 레퍼런스 보드</h1>
+  <span class="count" id="count"></span>
+  <div id="save-status"><div class="dot"></div><span id="save-status-text"></span></div>
+  <div class="spacer"></div>
+  <div class="controls">
+    <label class="col-label">컬럼</label>
+    <input type="range" id="col-slider" min="1" max="8" value="4">
+    <select class="sort-select" id="sort-select">
+      <option value="added">추가순</option>
+      <option value="name">이름순</option>
+      <option value="size">크기순</option>
+    </select>
+    <button class="btn btn-ghost" id="import-btn" title="내보낸 파일 불러오기">가져오기</button>
+    <button class="btn btn-ghost" id="export-btn">내보내기</button>
+    <button class="btn btn-ghost" id="clear-btn">초기화</button>
+    <button class="btn btn-primary" id="add-btn">+ 이미지 추가</button>
+    <input type="file" id="file-input" multiple accept="image/*">
+    <input type="file" id="import-input" accept=".json" style="display:none">
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">카테고리</div>
+
+      <div class="cat-item active" data-cat="all" onclick="selectCat('all')">
+        <span class="cat-dot" style="background:#555"></span>
+        <span class="cat-name">전체</span>
+        <span class="cat-count" id="count-all">0</span>
+      </div>
+
+      <div id="cat-list"></div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <button class="add-cat-btn" onclick="toggleAddCat()">
+      <span style="font-size:16px;line-height:1">+</span> 카테고리 추가
+    </button>
+
+    <div class="add-cat-form" id="add-cat-form">
+      <input class="add-cat-input" id="new-cat-name" placeholder="카테고리 이름" maxlength="20">
+      <div class="color-row" id="color-row"></div>
+      <div class="add-cat-actions">
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="cancelAddCat()">취소</button>
+        <button class="btn btn-primary" style="font-size:11px;padding:5px 10px" onclick="confirmAddCat()">추가</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="tag-bar"></div>
+
+    <div id="dropzone">
+      <div class="drop-icon">🖼</div>
+      <div class="drop-title">이미지를 여기에 드래그하세요</div>
+      <div class="drop-sub">JPG, PNG, GIF, WEBP 등 모든 이미지 파일 지원<br>여러 파일을 한꺼번에 올릴 수 있어요</div>
+      <button class="btn btn-primary" style="margin-top:6px" onclick="document.getElementById('file-input').click()">파일 선택</button>
+    </div>
+
+    <div id="gallery"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div id="lightbox-info"></div>
+  <div id="lightbox-meta">
+    <div id="lb-cat-checks"></div>
+    <div id="tag-input-wrap">
+      <input type="text" id="tag-input" placeholder="태그 추가 (Enter)" maxlength="30">
+      <div id="lightbox-tags"></div>
+    </div>
+  </div>
+  <div id="lightbox-nav">
+    <button class="nav-btn" onclick="navigate(-1)">◀ 이전</button>
+    <button class="nav-btn" onclick="navigate(1)">다음 ▶</button>
+  </div>
+</div>
+
+<!-- RUBBER BAND -->
+<div id="sel-rect"></div>
+
+<!-- FLOATING ACTION BAR -->
+<div id="action-bar">
+  <div class="ab-label"><span id="ab-count">0</span>장 선택됨</div>
+  <div class="ab-sep"></div>
+  <div class="ab-cats" id="ab-cats"></div>
+  <div class="ab-sep"></div>
+  <button class="ab-clear" onclick="clearSelection()">선택 해제</button>
+</div>
+
+<!-- STARTUP SCREEN -->
+<div id="startup">
+  <div class="startup-box">
+    <div class="startup-logo">🖼</div>
+    <div class="startup-title">이미지 레퍼런스 보드</div>
+    <div class="startup-sub">시작하기 전에 데이터 파일을 선택하거나<br>새 보드를 만들어주세요.</div>
+
+    <label class="startup-btn startup-btn-accent" for="startup-open-input" style="cursor:pointer">
+      <span class="sb-label">기존 보드 열기</span>
+      <span class="sb-desc">저장된 board-data.json 파일 선택</span>
+    </label>
+    <input type="file" id="startup-open-input" accept=".json" style="display:none">
+
+    <div class="startup-divider"><span>또는</span></div>
+
+    <button class="startup-btn startup-btn-primary" id="btn-new">
+      <span class="sb-label">새 보드 시작</span>
+      <span class="sb-desc">빈 보드로 바로 시작 (자동 저장)</span>
+    </button>
+  </div>
+</div>
+
+<!-- ASSIGN MODAL -->
+<div id="assign-modal">
+  <div class="modal-box">
+    <div class="modal-title">카테고리 선택</div>
+    <div class="modal-sub" id="assign-modal-sub"></div>
+    <div class="cat-option-list" id="assign-cat-list"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeAssignModal()">건너뛰기</button>
+      <button class="btn btn-primary" onclick="confirmAssign()">확인</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  let images = [];       // { id, name, size, url, catIds:[], tags:[], order }
+  let categories = [
+    { id: 'feed', name: '피드', color: '#6c8fff' },
+    { id: 'ad',   name: '광고', color: '#ff7e7e' },
+    { id: 'b2b',  name: 'B2B',  color: '#7edcaa' },
+    { id: 'look', name: '룩북', color: '#e4a0ff' },
+  ];
+  let currentIndex = -1;
+  let activeCat    = 'all';
+  let activeTag    = null;
+
+  const PALETTE = ['#6c8fff','#ff7e7e','#7edcaa','#e4a0ff','#ffbe7e','#7ef0ff','#ffd97e','#ff9ec4','#aaffaa','#c4c4ff'];
+  let selectedColor = PALETTE[0];
+
+  let pendingFiles  = [];
+  let pendingCatIds = [];   // multi-select
+
+  // dragging card → sidebar (이미지 할당)
+  let dragImgId = null;
+  // dragging category item → reorder
+  let dragCatId = null;
+
+  // multi-selection
+  let selectedIds = new Set();
+
+  // ── Storage: IndexedDB (핸들 보관) + File System Access API (실데이터) ──
+  const DB_NAME = 'ref-board';
+  const DB_VER  = 1;
+  let db;
+  let fileHandle = null;   // FileSystemFileHandle
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = e => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains('images')) d.createObjectStore('images', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('meta'))   d.createObjectStore('meta',   { keyPath: 'key' });
+      };
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = e => reject(e.target.error);
+    });
+  }
+
+  function idbReq(req) {
+    return new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+  }
+
+  // IDB 백업 저장 (핸들 포함)
+  async function saveToIDB() {
+    const tx = db.transaction(['images','meta'], 'readwrite');
+    const imgStore  = tx.objectStore('images');
+    const metaStore = tx.objectStore('meta');
+    await idbReq(imgStore.clear());
+    for (const img of images) await idbReq(imgStore.put(img));
+    await idbReq(metaStore.put({ key: 'categories', value: categories }));
+    if (fileHandle) await idbReq(metaStore.put({ key: 'fileHandle', value: fileHandle }));
+  }
+
+  // IDB에서 불러오기
+  async function loadFromIDB() {
+    const tx   = db.transaction(['images','meta'], 'readonly');
+    const imgs = await idbReq(tx.objectStore('images').getAll());
+    const cats = await idbReq(tx.objectStore('meta').get('categories'));
+    const fh   = await idbReq(tx.objectStore('meta').get('fileHandle'));
+    if (imgs.length) images = migrateImgs(imgs);
+    if (cats) categories = cats.value;
+    if (fh)  fileHandle  = fh.value;
+  }
+
+  // JSON 파일에 저장
+  async function saveToFile() {
+    if (!fileHandle) return false;
+    try {
+      const writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify({ version: 2, categories, images }));
+      await writable.close();
+      return true;
+    } catch { return false; }
+  }
+
+  // JSON 파일에서 불러오기
+  async function loadFromFile() {
+    if (!fileHandle) return false;
+    try {
+      const file = await fileHandle.getFile();
+      const data = JSON.parse(await file.text());
+      if (!data.version) return false;
+      if (data.images)     images     = migrateImgs(data.images);
+      if (data.categories) categories = data.categories;
+      return true;
+    } catch { return false; }
+  }
+
+  function migrateImgs(imgs) {
+    return imgs
+      .map(img => ({ ...img, catIds: img.catIds || (img.catId ? [img.catId] : []) }))
+      .sort((a, b) => a.order - b.order);
+  }
+
+  // 저장: 파일 우선, IDB는 항상 백업
+  async function saveAll() {
+    setSaveStatus('saving');
+    const ok = await saveToFile();
+    await saveToIDB();
+    setSaveStatus(ok ? 'saved' : (fileHandle ? 'error' : 'idle'));
+  }
+
+  // 저장 상태 표시
+  let _saveStatusTimer = null;
+  function setSaveStatus(state) {
+    const el   = document.getElementById('save-status');
+    const text = document.getElementById('save-status-text');
+    clearTimeout(_saveStatusTimer);
+    el.className = state;
+    const map = { saving: '저장 중…', saved: '저장됨', error: '저장 실패', idle: '저장 위치 미설정' };
+    text.textContent = map[state] || '';
+    // '저장됨'은 2초 뒤 dot만 남기고 텍스트 숨김
+    if (state === 'saved') {
+      _saveStatusTimer = setTimeout(() => { text.textContent = ''; }, 2000);
+    }
+  }
+
+  // 파일 핸들 권한 확인 (사용자 제스처 없이)
+  async function queryPermission(handle) {
+    try { return await handle.queryPermission({ mode: 'readwrite' }); }
+    catch { return 'denied'; }
+  }
+
+  // 파일 핸들 권한 요청 (사용자 제스처 필요)
+  async function requestPermission(handle) {
+    try { return await handle.requestPermission({ mode: 'readwrite' }); }
+    catch { return 'denied'; }
+  }
+
+
+  // ── Init ──
+  // 버튼 이벤트를 먼저 연결 (비동기 실패와 무관하게 항상 동작)
+  showStartup();
+
+  (async () => {
+    try {
+      db = await openDB();
+    } catch(e) {
+      // IndexedDB 사용 불가 → 메모리 모드로 동작
+      console.warn('IndexedDB 사용 불가:', e);
+    }
+    initColorRow();
+
+    if (!db) return; // IDB 없으면 startup 화면에서 대기
+
+    try {
+      await loadFromIDB();
+    } catch(e) {
+      console.warn('IDB 로드 실패:', e);
+    }
+
+    // IDB에 저장된 이미지가 있으면 바로 보드로 진입
+    if (images.length > 0) {
+      hideStartup();
+      renderSidebar(); renderGallery();
+      setSaveStatus('idle');
+      return;
+    }
+
+    // 이전 핸들이 있고 권한도 있으면 자동 로드
+    if (fileHandle) {
+      const perm = await queryPermission(fileHandle);
+      if (perm === 'granted') {
+        await loadFromFile();
+        hideStartup();
+        renderSidebar(); renderGallery();
+        setSaveStatus('saved');
+        return;
+      }
+    }
+  })();
+
+  async function newBoard() {
+    images = [];
+    fileHandle = null;
+    if (db) await saveToIDB().catch(() => {});
+    hideStartup();
+    renderSidebar(); renderGallery();
+    setSaveStatus('idle');
+  }
+
+  function showStartup() {
+    document.getElementById('startup-open-input').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const data = JSON.parse(await file.text());
+        if (!data.version || !Array.isArray(data.images)) throw new Error();
+        images     = migrateImgs(data.images);
+        categories = data.categories || categories;
+        fileHandle = null;
+        if (db) await saveToIDB().catch(() => {});
+        hideStartup();
+        renderSidebar(); renderGallery();
+        setSaveStatus('idle');
+      } catch { alert('올바른 보드 데이터 파일이 아니에요.'); }
+      e.target.value = '';
+    });
+    document.getElementById('btn-new').addEventListener('click', newBoard);
+  }
+
+  function hideStartup() {
+    document.getElementById('startup').classList.add('hidden');
+  }
+
+  function initColorRow() {
+    const row = document.getElementById('color-row');
+    row.innerHTML = PALETTE.map((c, i) =>
+      `<div class="color-swatch ${i===0?'selected':''}" style="background:${c}" onclick="pickColor(this,'${c}')"></div>`
+    ).join('');
+  }
+  function pickColor(el, color) {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedColor = color;
+  }
+
+  // ── Helpers ──
+  function getCat(id) { return categories.find(c => c.id === id); }
+  function formatSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+    return (b/1048576).toFixed(1) + ' MB';
+  }
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Sidebar ──
+  function renderSidebar() {
+    const list = document.getElementById('cat-list');
+    list.innerHTML = categories.map(cat => `
+      <div class="cat-item ${activeCat===cat.id?'active':''}" data-cat="${cat.id}">
+        <span class="cat-dot" style="background:${cat.color}"></span>
+        <span class="cat-name">${escHtml(cat.name)}</span>
+        <span class="cat-count">${images.filter(i=>i.catIds.includes(cat.id)).length}</span>
+        <button class="cat-delete" data-del="${cat.id}" title="삭제">✕</button>
+      </div>
+    `).join('');
+
+    document.getElementById('count-all').textContent = images.length;
+
+    // click to select
+    list.querySelectorAll('.cat-item').forEach(el => {
+      el.addEventListener('click', () => selectCat(el.dataset.cat));
+    });
+    // delete buttons
+    list.querySelectorAll('.cat-delete').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); deleteCat(btn.dataset.del); });
+    });
+
+    // 카테고리 순서 드래그 + 이미지 할당 드롭
+    list.querySelectorAll('.cat-item').forEach(el => {
+      const catId = el.dataset.cat;
+
+      // ── 카테고리 자체 드래그 (순서 변경) ──
+      el.setAttribute('draggable', 'true');
+      el.addEventListener('dragstart', e => {
+        if (dragImgId) return; // 이미지 드래그 중이면 무시
+        dragCatId = catId;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => el.classList.add('cat-dragging'), 0);
+      });
+      el.addEventListener('dragend', () => {
+        el.classList.remove('cat-dragging');
+        list.querySelectorAll('.cat-item').forEach(i => {
+          i.classList.remove('cat-over-above', 'cat-over-below');
+        });
+        dragCatId = null;
+      });
+
+      // ── dragover: 구분선 표시 ──
+      el.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (dragCatId && dragCatId !== catId) {
+          // 카테고리 순서 변경 모드
+          const rect = el.getBoundingClientRect();
+          const mid  = rect.top + rect.height / 2;
+          list.querySelectorAll('.cat-item').forEach(i =>
+            i.classList.remove('cat-over-above', 'cat-over-below')
+          );
+          el.classList.add(e.clientY < mid ? 'cat-over-above' : 'cat-over-below');
+        } else if (dragImgId) {
+          // 이미지 할당 모드
+          el.classList.add('drop-target');
+        }
+      });
+
+      el.addEventListener('dragleave', () => {
+        el.classList.remove('drop-target', 'cat-over-above', 'cat-over-below');
+      });
+
+      // ── drop ──
+      el.addEventListener('drop', e => {
+        e.preventDefault();
+        el.classList.remove('drop-target', 'cat-over-above', 'cat-over-below');
+
+        if (dragCatId && dragCatId !== catId) {
+          // 카테고리 순서 변경
+          const rect     = el.getBoundingClientRect();
+          const mid      = rect.top + rect.height / 2;
+          const insertBefore = e.clientY < mid;
+          const fromIdx  = categories.findIndex(c => c.id === dragCatId);
+          const toIdx    = categories.findIndex(c => c.id === catId);
+          const [moved]  = categories.splice(fromIdx, 1);
+          const newIdx   = categories.findIndex(c => c.id === catId);
+          categories.splice(insertBefore ? newIdx : newIdx + 1, 0, moved);
+          saveAll();
+          renderSidebar();
+        } else if (dragImgId) {
+          // 이미지 할당
+          const targets = selectedIds.size > 0 && selectedIds.has(String(dragImgId))
+            ? [...selectedIds]
+            : [String(dragImgId)];
+          targets.forEach(sid => {
+            const img = images.find(i => String(i.id) === sid);
+            if (img && !img.catIds.includes(catId)) img.catIds.push(catId);
+          });
+          saveAll();
+          renderSidebar();
+          renderGallery();
+          dragImgId = null;
+        }
+      });
+    });
+
+    // "전체" — 이미지 드래그만 허용 (순서 변경 대상 아님)
+    const allItem = document.querySelector('.cat-item[data-cat="all"]');
+    if (allItem) {
+      allItem.addEventListener('dragover', e => { if (dragImgId) e.preventDefault(); });
+    }
+  }
+
+  function selectCat(id) {
+    activeCat = id;
+    activeTag = null;
+    document.querySelectorAll('.cat-item').forEach(el =>
+      el.classList.toggle('active', el.dataset.cat === id)
+    );
+    renderGallery();
+  }
+
+  function deleteCat(id) {
+    const cat = categories.find(c => c.id === id);
+    const count = images.filter(i => i.catIds.includes(id)).length;
+    const msg = count > 0
+      ? `"${cat.name}" 카테고리를 삭제하면 해당 이미지 ${count}장에서 제거됩니다. 계속할까요?`
+      : `"${cat.name}" 카테고리를 삭제할까요?`;
+    if (!confirm(msg)) return;
+    images.forEach(img => { img.catIds = img.catIds.filter(c => c !== id); });
+    categories = categories.filter(c => c.id !== id);
+    if (activeCat === id) activeCat = 'all';
+    saveAll();
+    renderSidebar();
+    renderGallery();
+  }
+
+  function toggleAddCat() {
+    const form = document.getElementById('add-cat-form');
+    form.classList.toggle('open');
+    if (form.classList.contains('open')) document.getElementById('new-cat-name').focus();
+  }
+  function cancelAddCat() {
+    document.getElementById('add-cat-form').classList.remove('open');
+    document.getElementById('new-cat-name').value = '';
+  }
+  function confirmAddCat() {
+    const name = document.getElementById('new-cat-name').value.trim();
+    if (!name) return;
+    categories.push({ id: 'cat_' + Date.now(), name, color: selectedColor });
+    document.getElementById('new-cat-name').value = '';
+    document.getElementById('add-cat-form').classList.remove('open');
+    saveAll();
+    renderSidebar();
+  }
+  document.getElementById('new-cat-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmAddCat();
+    if (e.key === 'Escape') cancelAddCat();
+  });
+
+  // ── File handling ──
+  const dropzone = document.getElementById('dropzone');
+
+  document.body.addEventListener('dragover', e => {
+    if (dragImgId) return;   // internal drag — don't show file dropzone
+    e.preventDefault();
+    dropzone.classList.add('drag-over');
+  });
+  document.body.addEventListener('dragleave', e => {
+    if (!e.relatedTarget) dropzone.classList.remove('drag-over');
+  });
+  document.body.addEventListener('drop', e => {
+    if (dragImgId) { dragImgId = null; return; }
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+  });
+
+  dropzone.addEventListener('click', () => document.getElementById('file-input').click());
+  document.getElementById('file-input').addEventListener('change', e => handleFiles(e.target.files));
+  document.getElementById('add-btn').addEventListener('click', () => document.getElementById('file-input').click());
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    if (!images.length || confirm('모든 이미지를 제거할까요?')) {
+      images = []; saveAll(); renderSidebar(); renderGallery();
+    }
+  });
+  document.getElementById('col-slider').addEventListener('input', e => {
+    document.getElementById('gallery').style.columns = e.target.value;
+  });
+  document.getElementById('sort-select').addEventListener('change', renderGallery);
+
+  function handleFiles(fileList) {
+    const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    if (!files.length) return;
+    pendingFiles  = files;
+    pendingCatIds = activeCat !== 'all' ? [activeCat] : [];
+    openAssignModal(files.length);
+  }
+
+  // ── Assign Modal (multi-select) ──
+  function openAssignModal(count) {
+    document.getElementById('assign-modal-sub').textContent =
+      `${count}장의 이미지를 어떤 카테고리에 넣을까요? (복수 선택 가능)`;
+    renderAssignList();
+    document.getElementById('assign-modal').classList.add('open');
+  }
+
+  function renderAssignList() {
+    const list = document.getElementById('assign-cat-list');
+    list.innerHTML = categories.map(cat => `
+      <div class="cat-option ${pendingCatIds.includes(cat.id)?'selected':''}" data-id="${cat.id}">
+        <span style="width:10px;height:10px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>
+        ${escHtml(cat.name)}
+      </div>
+    `).join('');
+    list.querySelectorAll('.cat-option').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.dataset.id;
+        const idx = pendingCatIds.indexOf(id);
+        if (idx === -1) pendingCatIds.push(id);
+        else pendingCatIds.splice(idx, 1);
+        el.classList.toggle('selected', pendingCatIds.includes(id));
+      });
+    });
+  }
+
+  function closeAssignModal() {
+    document.getElementById('assign-modal').classList.remove('open');
+    loadPendingFiles([...pendingCatIds]);
+    pendingFiles = [];
+  }
+  function confirmAssign() {
+    document.getElementById('assign-modal').classList.remove('open');
+    loadPendingFiles([...pendingCatIds]);
+    pendingFiles = [];
+  }
+
+  function loadPendingFiles(catIds) {
+    pendingFiles.forEach(f => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        images.push({
+          id: Date.now() + Math.random(),
+          name: f.name, size: f.size, url: e.target.result,
+          catIds: [...catIds], tags: [], order: images.length,
+        });
+        saveAll(); renderSidebar(); renderGallery();
+      };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  // ── Gallery ──
+  function filteredImages() {
+    let list = [...images];
+    if (activeCat !== 'all') list = list.filter(img => img.catIds.includes(activeCat));
+    if (activeTag) list = list.filter(img => img.tags.includes(activeTag));
+    const sort = document.getElementById('sort-select').value;
+    if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
+    else if (sort === 'size') list.sort((a, b) => b.size - a.size);
+    else list.sort((a, b) => a.order - b.order);
+    return list;
+  }
+
+  function renderGallery() {
+    const list = filteredImages();
+    const gallery = document.getElementById('gallery');
+    gallery.innerHTML = '';
+    document.getElementById('count').textContent = list.length ? `${list.length}장` : '';
+
+    if (images.length === 0) {
+      dropzone.classList.remove('hidden');
+      gallery.style.display = 'none';
+      document.getElementById('tag-bar').style.display = 'none';
+      return;
+    }
+
+    dropzone.classList.add('hidden');
+    gallery.style.display = 'block';
+    gallery.style.columns = document.getElementById('col-slider').value;
+
+    list.forEach((img, idx) => {
+      const badges = img.catIds
+        .map(id => getCat(id))
+        .filter(Boolean)
+        .map(c => `<span class="img-cat-badge" style="background:${c.color}cc;opacity:1;position:static;padding:2px 6px;border-radius:8px;font-size:10px;color:#fff;font-weight:600">${escHtml(c.name)}</span>`)
+        .join('');
+
+      const card = document.createElement('div');
+      card.className = 'img-card';
+      card.draggable = true;
+      card.dataset.imgId = img.id;
+
+      const isSelected = selectedIds.has(String(img.id));
+      if (isSelected) card.classList.add('selected');
+
+      card.innerHTML = `
+        <div class="card-check" data-check="${img.id}"></div>
+        <img src="${img.url}" alt="${escHtml(img.name)}" loading="lazy" draggable="false">
+        <div class="img-overlay">
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${badges}</div>
+          <div class="img-name">${escHtml(img.name)}</div>
+          <div class="img-size">${formatSize(img.size)}</div>
+          <div class="img-tags">${img.tags.map(t=>`<span class="img-tag">${escHtml(t)}</span>`).join('')}</div>
+        </div>
+        <div class="img-actions">
+          <button class="icon-btn" data-open="${idx}" title="자세히 보기">⤢</button>
+          <button class="icon-btn" data-del="${img.id}" title="삭제">✕</button>
+        </div>
+      `;
+
+      card.querySelector('.card-check').addEventListener('click', e => toggleSelect(img.id, e));
+
+      // drag from card to sidebar
+      card.addEventListener('dragstart', e => {
+        dragImgId = String(img.id);
+        e.dataTransfer.effectAllowed = 'copy';
+        card.classList.add('dragging');
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        dragImgId = null;
+      });
+
+      card.querySelector('[data-open]').addEventListener('click', e => { e.stopPropagation(); openLightbox(idx); });
+      card.querySelector('[data-del]').addEventListener('click', e => { e.stopPropagation(); removeImage(img.id); });
+      card.addEventListener('click', e => {
+        if (e.target.closest('.card-check') || e.target.closest('.img-actions')) return;
+        if (selectedIds.size > 0) { toggleSelect(img.id, e); return; }
+        openLightbox(idx);
+      });
+      gallery.appendChild(card);
+    });
+
+    renderTagBar();
+  }
+
+  function renderTagBar() {
+    const bar = document.getElementById('tag-bar');
+    const allTags = [...new Set(filteredImages().flatMap(img => img.tags))];
+    if (!allTags.length) { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    bar.innerHTML =
+      `<span class="tag-chip ${!activeTag?'active':''}" onclick="filterTag(null)">전체</span>` +
+      allTags.map(t => `<span class="tag-chip ${activeTag===t?'active':''}" onclick="filterTag('${escHtml(t)}')">${escHtml(t)}</span>`).join('');
+  }
+
+  function filterTag(tag) { activeTag = tag; renderGallery(); }
+
+  // ── Selection ──
+  function toggleSelect(id, e) {
+    e && e.stopPropagation();
+    const sid = String(id);
+    if (selectedIds.has(sid)) selectedIds.delete(sid);
+    else selectedIds.add(sid);
+    const card = document.querySelector(`.img-card[data-img-id="${sid}"]`);
+    if (card) card.classList.toggle('selected', selectedIds.has(sid));
+    renderActionBar();
+  }
+
+  function clearSelection() {
+    selectedIds.clear();
+    document.querySelectorAll('.img-card.selected').forEach(c => c.classList.remove('selected'));
+    renderActionBar();
+  }
+
+  function renderActionBar() {
+    const bar = document.getElementById('action-bar');
+    if (selectedIds.size === 0) { bar.classList.remove('visible'); return; }
+    bar.classList.add('visible');
+    document.getElementById('ab-count').textContent = selectedIds.size;
+    const cats = document.getElementById('ab-cats');
+    cats.innerHTML = categories.map(cat =>
+      `<button class="ab-cat-btn" data-cat="${cat.id}">
+        <span class="ab-dot" style="background:${cat.color}"></span>${escHtml(cat.name)}
+       </button>`
+    ).join('');
+    cats.querySelectorAll('.ab-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => assignSelectedToCat(btn.dataset.cat));
+    });
+  }
+
+  function assignSelectedToCat(catId) {
+    selectedIds.forEach(sid => {
+      const img = images.find(i => String(i.id) === sid);
+      if (img && !img.catIds.includes(catId)) img.catIds.push(catId);
+    });
+    saveAll();
+    renderSidebar();
+    renderGallery();
+    clearSelection();
+  }
+
+  // ── Rubber-band selection ──
+  (function () {
+    const main    = document.getElementById('main');
+    const selRect = document.getElementById('sel-rect');
+    let band = null;
+    let didDrag = false;  // 드래그가 실제 발생했는지 추적
+
+    main.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      if (e.target.closest('.img-card') || e.target.closest('#tag-bar') || e.target.closest('#dropzone')) return;
+      band = { x0: e.clientX, y0: e.clientY };
+      didDrag = false;
+      selRect.style.cssText = `display:block;left:${e.clientX}px;top:${e.clientY}px;width:0;height:0`;
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (!band) return;
+      const x = Math.min(e.clientX, band.x0);
+      const y = Math.min(e.clientY, band.y0);
+      const w = Math.abs(e.clientX - band.x0);
+      const h = Math.abs(e.clientY - band.y0);
+      if (w > 4 || h > 4) didDrag = true;
+      selRect.style.left   = x + 'px';
+      selRect.style.top    = y + 'px';
+      selRect.style.width  = w + 'px';
+      selRect.style.height = h + 'px';
+
+      const r = { left: x, top: y, right: x + w, bottom: y + h };
+      document.querySelectorAll('.img-card').forEach(card => {
+        const cr  = card.getBoundingClientRect();
+        const hit = cr.right > r.left && cr.left < r.right && cr.bottom > r.top && cr.top < r.bottom;
+        const sid = String(card.dataset.imgId);
+        if (hit) selectedIds.add(sid);
+        card.classList.toggle('selected', selectedIds.has(sid));
+      });
+      renderActionBar();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!band) return;
+      band = null;
+      selRect.style.display = 'none';
+      // 드래그가 있었으면 이어지는 click 이벤트로 선택이 해제되지 않도록 막음
+      if (didDrag) {
+        const suppress = e => { e.stopImmediatePropagation(); };
+        window.addEventListener('click', suppress, { capture: true, once: true });
+      }
+      didDrag = false;
+    });
+  })();
+
+  function removeImage(id) {
+    images = images.filter(img => img.id !== id);
+    saveAll(); renderSidebar(); renderGallery();
+  }
+
+  // ── Lightbox ──
+  function openLightbox(idx) {
+    currentIndex = idx;
+    const list = filteredImages();
+    const img  = list[idx];
+    document.getElementById('lightbox-img').src = img.url;
+    document.getElementById('lightbox-info').textContent =
+      `${img.name}  ·  ${formatSize(img.size)}  ·  ${idx+1} / ${list.length}`;
+    renderLightboxCats(img);
+    renderLightboxTags(img);
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+    renderSidebar(); renderGallery();
+  }
+
+  function navigate(dir) {
+    const list = filteredImages();
+    currentIndex = (currentIndex + dir + list.length) % list.length;
+    openLightbox(currentIndex);
+  }
+
+  function renderLightboxCats(img) {
+    const wrap = document.getElementById('lb-cat-checks');
+    wrap.innerHTML = categories.map(cat => {
+      const on = img.catIds.includes(cat.id);
+      return `<span class="lb-cat-chip ${on?'on':''}" style="${on?`background:${cat.color}88`:''}" data-cat="${cat.id}">
+        <span class="chip-dot" style="background:${cat.color}"></span>${escHtml(cat.name)}
+      </span>`;
+    }).join('');
+    wrap.querySelectorAll('.lb-cat-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const catId = chip.dataset.cat;
+        const img2  = filteredImages()[currentIndex];
+        const orig  = images.find(i => i.id === img2.id);
+        if (!orig) return;
+        const idx2 = orig.catIds.indexOf(catId);
+        if (idx2 === -1) orig.catIds.push(catId);
+        else orig.catIds.splice(idx2, 1);
+        saveAll();
+        renderLightboxCats(orig);
+        renderSidebar();
+      });
+    });
+  }
+
+  function renderLightboxTags(img) {
+    const wrap = document.getElementById('lightbox-tags');
+    wrap.innerHTML = img.tags.map(t =>
+      `<span class="lb-tag" data-tag="${escHtml(t)}" data-id="${img.id}">${escHtml(t)} ✕</span>`
+    ).join('');
+    wrap.querySelectorAll('.lb-tag').forEach(el => {
+      el.addEventListener('click', () => removeTag(el.dataset.id, el.dataset.tag));
+    });
+  }
+
+  function removeTag(id, tag) {
+    const img = images.find(i => String(i.id) === String(id));
+    if (img) { img.tags = img.tags.filter(t => t !== tag); saveAll(); }
+    renderLightboxTags(img || filteredImages()[currentIndex]);
+  }
+
+  document.getElementById('tag-input').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const val = e.target.value.trim();
+    if (!val) return;
+    const img  = filteredImages()[currentIndex];
+    const orig = images.find(i => i.id === img.id);
+    if (orig && !orig.tags.includes(val)) { orig.tags.push(val); saveAll(); }
+    e.target.value = '';
+    renderLightboxTags(orig || img);
+  });
+
+  // 빈 공간 클릭 시 선택 해제
+  document.getElementById('gallery').addEventListener('click', e => {
+    if (!e.target.closest('.img-card')) clearSelection();
+  });
+  document.getElementById('main').addEventListener('click', e => {
+    if (!e.target.closest('.img-card') && !e.target.closest('#tag-bar')) clearSelection();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('lightbox').classList.contains('open')) {
+      if (e.key === 'Escape' && selectedIds.size > 0) { clearSelection(); return; }
+    }
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowRight') navigate(1);
+    if (e.key === 'ArrowLeft') navigate(-1);
+  });
+
+  // ── Export ──
+  document.getElementById('export-btn').addEventListener('click', () => {
+    if (!images.length) { alert('내보낼 이미지가 없어요.'); return; }
+    const blob = new Blob([JSON.stringify({ version: 2, categories, images })], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `reference-board-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // ── Import ──
+  document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-input').click());
+  document.getElementById('import-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.version || !Array.isArray(data.images)) throw new Error();
+        const merge = images.length > 0 &&
+          confirm('현재 보드에 이미지가 있어요.\n"확인" → 기존 내용에 합치기\n"취소" → 기존 내용 교체');
+        if (!merge) {
+          images = [];
+          categories = [
+            { id: 'feed', name: '피드', color: '#6c8fff' },
+            { id: 'ad',   name: '광고', color: '#ff7e7e' },
+            { id: 'b2b',  name: 'B2B',  color: '#7edcaa' },
+            { id: 'look', name: '룩북', color: '#e4a0ff' },
+          ];
+        }
+        const existingIds = new Set(categories.map(c => c.id));
+        (data.categories || []).forEach(c => { if (!existingIds.has(c.id)) categories.push(c); });
+        const offset = images.length;
+        (data.images || []).forEach((img, i) => {
+          // migrate catId → catIds
+          const catIds = img.catIds || (img.catId ? [img.catId] : []);
+          images.push({ ...img, id: Date.now() + Math.random(), catIds, order: offset + i });
+        });
+        activeCat = 'all'; activeTag = null;
+        saveAll(); renderSidebar(); renderGallery();
+      } catch { alert('올바른 레퍼런스 보드 파일이 아니에요.'); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+</script>
+</body>
+</html>
